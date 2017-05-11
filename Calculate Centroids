@@ -1,0 +1,25 @@
+import arcpy
+import os
+
+arcpy.env.workspace = workspace # insert workspace
+feature = "feature" #insert feature
+
+def calculateCentroids(feature):
+    """Calculate Centroids in GCS_WGS_1984 coordinate system"""
+    # out_coordinate_system = arcpy.SpatialReference(4326)  # GCS_WGS_1984 coordinate system code
+    field = ["CENTROID_X", "CENTROID_Y", "SHAPE@XY"]
+    arcpy.AddField_management(feature, field[0], "DOUBLE")
+    print "Field {0}, {1} has been added to the {2}".format(field[0], field[1], os.path.basename(feature))
+    if (field[0] and field[1]) not in [f.name for f in arcpy.ListFields(feature, "C*")]:
+        print "'{0}{1}' not found in \"{2}\"".format(field[0], field[1], os.path.basename(feature))
+        print 'Please verify that field names match in "{}"'.format(os.path.basename(feature))
+        sys.exit()
+    else:
+        with arcpy.da.UpdateCursor(feature, field) as cursor:
+            for row in cursor:
+                row[0] = row[2][0]
+                row[1] = row[2][1]
+                cursor.updateRow(row)
+        print "Field {0}, {1} has been updated in {2}!".format(field[0], field[1], os.path.basename(feature))
+
+calculateCentroids(feature)
