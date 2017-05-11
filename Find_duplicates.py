@@ -1,28 +1,32 @@
 import arcpy
+import os
 
 arcpy.env.workspace = r"D:\Users\test.gdb"
-infeature = "feature"  # insert the feature class
-field_in = "field"  # insert the field of the feature class
-field_out = "DUPLICATES_" + field_in
+feature = "feature"  # insert the feature class
 
-# create the field for the count values
-arcpy.AddField_management(infeature, field_out, "SHORT")
+def findDuplicates(feature):
+    """Calculate the Duplicated features per Instance_S"""
+    lista = []
+    field = ["OID", "DUPLICATES"]  # change with your field with duplicates
+    arcpy.AddField_management(feature, "DUPLICATES", "SHORT")
+    print "Field {0} has been added to the {1}".format(field[1], os.path.basename(feature))
 
-# creating the list with all the values in the field, including duplicates
-field_list = []
-cursor1 = arcpy.SearchCursor(infeature)
-for row in cursor1:
-    i = row.getValue(field_in)
-    field_list.append(i)
-del cursor1, row
+    with arcpy.da.SearchCursor(feature, field) as search:
+        for row in search:
+            id = row[0]
+            lista.append(id)
 
-# updating the count field with the number on occurrences of field_in values
-# in the previously created list
-cursor2 = arcpy.UpdateCursor(infeature)
-for row in cursor2:
-    i = row.getValue(field_in)
-    occ = field_list.count(i)
-    row.setValue(field_out, occ)
-    cursor2.updateRow(row)
-del cursor2, row
-print ("The duplicates field has been updated.")
+    if field[1] not in [f.name for f in arcpy.ListFields(feature)]:
+        print "'{0}' not found in \"{1}\"".format(field[1], os.path.basename(feature))
+        print 'Please verify that field names match in "{}"'.format(os.path.basename(feature))
+        sys.exit()
+    else:
+        with arcpy.da.UpdateCursor(feature, field) as cursor:
+            for row in cursor:
+                id = row[0]
+                duplicates = lista.count(id)
+                row[1] = duplicates
+                cursor.updateRow(row)
+        print "Field {0} has been updated in {1}!".format(field[1], os.path.basename(feature))
+
+findDuplicates(feature)
