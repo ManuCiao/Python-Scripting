@@ -1,0 +1,61 @@
+import os
+import arcpy
+import sys
+import arcpy.mapping as mapping
+
+RegionList = [
+    'AK', 'AP', 'CA',
+    'CAM', 'CEE', 'CS',
+    'GMX', 'ME', 'NA',
+    'NAF', 'NWE', 'RU',
+    'SA', 'SAM', 'SSA'
+]
+
+# An example of the path where you want to overwrite the mxds.
+location = sys.argv[1]
+
+# An example of the layer to add
+# layer = os.path.join(location, 'Something.lyr')
+layer = sys.argv[2]
+
+try:
+
+    for region in RegionList:
+
+        # set working environment
+        workspace = os.path.join(location, region)
+        arcpy.env.workspace = workspace
+        arcpy.env.overwriteOutput = True
+
+        print "Workspace is: " + arcpy.env.workspace
+
+        for root, dirs, files in os.walk(workspace):
+            for f in files:
+                if f.endswith(".mxd"):
+                    mxdName = root + '\\' + f
+                    print "Name of the Startup mxds: " + f
+                    mxd = mapping.MapDocument(mxdName)
+
+                    # Get the first data frame.
+                    dataFrame = mapping.ListDataFrames(mxd)[0]
+                    print "Name of the dataframe: " + dataFrame.name
+
+                    # Instantiate a Layer object.
+                    addLayer = mapping.Layer(layer)  # change the name of the layer file here if you give different name
+
+                    # Add the new layer to the map.
+                    mapping.AddLayer(dataFrame, addLayer, "BOTTOM")
+                    print "Add Layer: " + addLayer.name + " to: " + f
+
+                    # Refresh Active view and table of content
+                    arcpy.RefreshActiveView()
+                    arcpy.RefreshTOC()
+
+                    mxd.save()
+
+                    del mxd, addLayer
+
+except Exception:
+    e = sys.exc_info()[1]
+    print(e.args[0])
+
