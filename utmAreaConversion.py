@@ -41,7 +41,7 @@ def utmConversion(feature):
                         UCur.updateRow(URow)
         print "Field {0} has been updated to {1}.".format(field[1], feature)
 
-if __init__ = __main__:
+if __name__ == '__main__':
   feature = # add the feature class or shp 
   utmConversion(feature)
 
