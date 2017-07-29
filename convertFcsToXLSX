@@ -1,0 +1,58 @@
+import os
+import xlsxwriter
+import arcpy
+
+def fcToXlsx(fileName, workspace):
+    arcpy.env.workspace = workspace
+    fc = arcpy.ListFeatureClasses()  # feature class/layer
+    # looping into Blocks, Fields and Wells
+    # fc = [fc for fc in arcpy.ListFeatureClasses() if fc.startswith('B') or fc.startswith('F') or fc.startswith('W')]
+    with xlsxwriter.Workbook(fileName) as workbook:  # new workbook
+        for f in fc:
+            print f
+            worksheet = workbook.add_worksheet(str(f))  # create worksheet with the feature name
+            fieldnames = [i.name for i in arcpy.ListFields(f)]  # list fields in fc
+            for field, fieldname in enumerate(fieldnames):
+                worksheet.write(0, field, fieldname)  # write field names to xlsx
+            with arcpy.da.SearchCursor(f, '*') as cursor:  # loop through features
+                for row, row_val in enumerate(cursor):  # loop through rows
+                    for col, col_val in enumerate(row_val):  # loop through columns
+                        try:
+                            worksheet.write(row + 1, col, col_val)  # if text or number, write value
+                        except:
+                            worksheet.write(row + 1, col, repr(col_val))  # if something else (like a shape) write the representation
+                                   
+
+def createDirectory(path):
+    import errno
+    print "Checking to see if", path, "exists..."
+    try:
+        os.makedirs(path)
+        print "A folder called Integrity_Check has been created..."
+    except OSError as exception:
+        if exception.errno != errno.EEXIST or not os.path.isdir(path):
+            raise
+        else:
+            print "\nBE CAREFUL! Directory {} already exists.".format(path)
+            
+            
+if __name__ == '__main__':
+    # make a directory called Integrity Check in a Dump folder (D Drive)
+    path = r"D:/Dump/Integrity_Check"
+    createDirectory(path)
+    # sde connection are all stored here
+    sdeConnectionDir = # add FGDB SDE connection
+    for d in dataset:
+        regionConnection = ''.join([d, '_DATA', '.sde'])
+        sdeWorkspace = os.path.join(sdeConnectionDir, regionConnection)
+        print "Processing SDE connection file: {}".format(d)
+
+        arcpy.env.workspace = sdeWorkspace
+        
+        excelFile = '.'.join([str(d), "xlsx"])
+        fileName = os.path.join(path, excelFile)
+        # print excelFile
+
+        fcToXlsx(fileName, sdeWorkspace)
+        print "The Xlsx file name is called {0} and it is stored in {1}".format(fileName, path)
+
